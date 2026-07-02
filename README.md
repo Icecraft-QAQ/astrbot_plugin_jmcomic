@@ -70,4 +70,4 @@ cp -r astrbot_plugin_jmcomic /path/to/astrbot/addons/plugins/
 
 ## License
 
-MIT — 仅供学习交流 (｀・ω・´)
+MIT
