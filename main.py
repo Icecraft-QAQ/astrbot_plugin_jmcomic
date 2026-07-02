@@ -222,50 +222,50 @@ download:
 
         yield event.plain_result(f"正在搜索「{keyword}」（{sort_label}）...")
 
+        import traceback
+
         try:
-            # 分段 try 便于定位 "list index out of range" 来源
-            try:
-                option = self._make_option()
-            except Exception:
-                logger.error("搜索失败: _make_option", exc_info=True)
-                raise
+            print("[DEBUG] search: _make_option start", flush=True)
+            option = self._make_option()
+            print("[DEBUG] search: _make_option ok", flush=True)
 
-            try:
-                client = await asyncio.to_thread(option.build_jm_client)
-            except Exception:
-                logger.error("搜索失败: build_jm_client", exc_info=True)
-                raise
+            print("[DEBUG] search: build_jm_client start", flush=True)
+            client = await asyncio.to_thread(option.build_jm_client)
+            print("[DEBUG] search: build_jm_client ok", flush=True)
 
-            try:
-                page = await asyncio.to_thread(
-                    client.search_site, keyword, page=1, order_by=order_by
-                )
-            except Exception:
-                logger.error("搜索失败: search_site", exc_info=True)
-                raise
+            print("[DEBUG] search: search_site start", flush=True)
+            page = await asyncio.to_thread(
+                client.search_site, keyword, page=1, order_by=order_by
+            )
+            print("[DEBUG] search: search_site ok", flush=True)
 
-            # page.content 是原始 List[(album_id, info_dict)]，直接遍历最稳妥
             content = getattr(page, "content", None)
+            print(
+                f"[DEBUG] search: content len={len(content) if content else 'None'}",
+                flush=True,
+            )
+
             if not content or len(content) == 0:
                 yield event.plain_result(f"没搜到「{keyword}」相关结果 (´-ι_-｀)")
                 return
 
             lines = [f"搜索「{keyword}」（{sort_label}）的结果:"]
-            try:
-                for i, (aid, info) in enumerate(content[:10]):
-                    title = str(info.get("name", "未知"))
-                    if len(title) > 40:
-                        title = title[:37] + "..."
-                    author = str(info.get("author", info.get("authors", "未知")))
-                    pages = info.get("page_count", "?")
-                    lines.append(f"{i + 1}. JM{aid} | 【{author}】{title} ({pages}P)")
-            except Exception:
-                logger.error("搜索失败: 结果解析", exc_info=True)
-                raise
+            print("[DEBUG] search: building result lines", flush=True)
+            for i, (aid, info) in enumerate(content[:10]):
+                title = str(info.get("name", "未知"))
+                if len(title) > 40:
+                    title = title[:37] + "..."
+                author = str(info.get("author", info.get("authors", "未知")))
+                pages = info.get("page_count", "?")
+                lines.append(f"{i + 1}. JM{aid} | 【{author}】{title} ({pages}P)")
+            print("[DEBUG] search: result lines built", flush=True)
 
             yield event.plain_result("\n".join(lines))
+            print("[DEBUG] search: result sent", flush=True)
 
         except Exception as e:
+            print(f"[DEBUG] search EXCEPTION: {e}", flush=True)
+            traceback.print_exc()
             yield event.plain_result(
                 f"搜索失败: {str(e)[:100]} （´_ゝ`）\n"
                 f"可能是 JM 服务器抽风或关键词太生僻，换个词试试？"
