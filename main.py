@@ -24,14 +24,14 @@ from jmcomic import create_option_by_str
 # 默认配置
 # ---------------------------------------------------------------------------
 DEFAULT_CONFIG = {
-    "pdf_max_pages": 200,           # PDF 模式单次最大页数
-    "download_threads": 3,          # 下载并发数
-    "temp_dir": None,               # 临时目录（None = 系统 /tmp）
+    "pdf_max_pages": 200,  # PDF 模式单次最大页数
+    "download_threads": 3,  # 下载并发数
+    "temp_dir": None,  # 临时目录（None = 系统 /tmp）
     "domains": ["jmcomic1.me", "jmcomic.me", "18comic.vip", "18comic.org"],
-    "proxy": None,                  # HTTP 代理，如 "http://127.0.0.1:7890"
-    "quiet": True,                  # 关掉 JM 库日志
-    "pdf_max_width": 1400,          # PDF 图片最大宽度（超过等比缩小）
-    "pdf_jpeg_quality": 80,         # PDF 图片 JPEG 质量 1-100
+    "proxy": None,  # HTTP 代理，如 "http://127.0.0.1:7890"
+    "quiet": True,  # 关掉 JM 库日志
+    "pdf_max_width": 1400,  # PDF 图片最大宽度（超过等比缩小）
+    "pdf_jpeg_quality": 80,  # PDF 图片 JPEG 质量 1-100
 }
 
 # ---------------------------------------------------------------------------
@@ -39,7 +39,12 @@ DEFAULT_CONFIG = {
 # ---------------------------------------------------------------------------
 
 
-@register("astrbot_plugin_jmcomic", "icechan", "JM 禁漫下载：封面 / PDF，支持排队 (￣▽￣)~*", "1.2.0")
+@register(
+    "astrbot_plugin_jmcomic",
+    "icechan",
+    "JM 禁漫下载：封面 / PDF，支持排队 (￣▽￣)~*",
+    "1.2.0",
+)
 class JMComicPlugin(Star):
     """
     /jm <ID>            → 发送封面 + 信息
@@ -90,19 +95,19 @@ class JMComicPlugin(Star):
     def _make_option(self):
         cfg = self.config
         yaml_config = f"""
-log: {not cfg['quiet']}
+log: {not cfg["quiet"]}
 dir_rule:
-  base_dir: {cfg['temp_dir'] or tempfile.gettempdir()}
+  base_dir: {cfg["temp_dir"] or tempfile.gettempdir()}
   rule: Bd_Aid
 
 client:
   impl: api
   domain:
-    html: {cfg['domains']}
+    html: {cfg["domains"]}
 
 download:
   threading:
-    image: {cfg['download_threads']}
+    image: {cfg["download_threads"]}
     photo: 1
   image:
     decode: true
@@ -125,7 +130,7 @@ download:
             return None
 
         album_id = parts[1].strip()
-        if not re.match(r'^\d+$', album_id):
+        if not re.match(r"^\d+$", album_id):
             return None
 
         start = 1
@@ -133,8 +138,8 @@ download:
 
         if len(parts) >= 3:
             arg = parts[2].strip()
-            if '-' in arg:
-                m = re.match(r'^(\d+)-(\d+)$', arg)
+            if "-" in arg:
+                m = re.match(r"^(\d+)-(\d+)$", arg)
                 if not m:
                     return None
                 start = int(m.group(1))
@@ -184,10 +189,7 @@ download:
     async def _send_proactive(self, origin: str, text: str):
         """队列模式下发送纯文本"""
         try:
-            await self.context.send_message(
-                origin,
-                MessageChain().message(text)
-            )
+            await self.context.send_message(origin, MessageChain().message(text))
         except Exception as e:
             logger.error(f"发送消息失败: {e}")
 
@@ -209,14 +211,14 @@ download:
         # 解析关键词和排序方式
         raw = parts[1].strip()
         tokens = raw.rsplit(maxsplit=1)
-        if tokens[-1].lower() in ('like', '喜欢'):
+        if tokens[-1].lower() in ("like", "喜欢"):
             keyword = tokens[0].strip()
-            order_by = 'tf'  # 喜欢最多
-            sort_label = '喜欢最多'
+            order_by = "tf"  # 喜欢最多
+            sort_label = "喜欢最多"
         else:
             keyword = raw
-            order_by = 'mr'  # 最新
-            sort_label = '最新'
+            order_by = "mr"  # 最新
+            sort_label = "最新"
 
         yield event.plain_result(f"正在搜索「{keyword}」（{sort_label}）...")
 
@@ -235,11 +237,11 @@ download:
             lines = [f"搜索「{keyword}」（{sort_label}）的结果:"]
             for i, item in enumerate(page[:10]):
                 aid, info = item
-                title = str(info.get('name', '未知'))
+                title = str(info.get("name", "未知"))
                 if len(title) > 40:
                     title = title[:37] + "..."
-                author = str(info.get('author', info.get('authors', '未知')))
-                pages = info.get('page_count', '?')
+                author = str(info.get("author", info.get("authors", "未知")))
+                pages = info.get("page_count", "?")
                 lines.append(f"{i + 1}. JM{aid} | 【{author}】{title} ({pages}P)")
 
             yield event.plain_result("\n".join(lines))
@@ -294,9 +296,7 @@ download:
         tmp_dir = tempfile.mkdtemp(prefix=f"jm_cover_{album_id}_", dir=tmp_root)
         try:
             cover_path = os.path.join(tmp_dir, f"cover_{album_id}.jpg")
-            await asyncio.to_thread(
-                client.download_album_cover, album_id, cover_path
-            )
+            await asyncio.to_thread(client.download_album_cover, album_id, cover_path)
 
             # 先发文字、再发图片，拆开避免 QQ NT 超时
             yield event.plain_result(info)
@@ -318,7 +318,9 @@ download:
         try:
             album, client = await self._fetch_album_and_client(album_id)
         except Exception as e:
-            await self._send_proactive(origin, f"获取 JM{album_id} 失败: {str(e)[:100]}")
+            await self._send_proactive(
+                origin, f"获取 JM{album_id} 失败: {str(e)[:100]}"
+            )
             return
 
         info = (
@@ -333,9 +335,7 @@ download:
         tmp_dir = tempfile.mkdtemp(prefix=f"jm_cover_{album_id}_", dir=tmp_root)
         try:
             cover_path = os.path.join(tmp_dir, f"cover_{album_id}.jpg")
-            await asyncio.to_thread(
-                client.download_album_cover, album_id, cover_path
-            )
+            await asyncio.to_thread(client.download_album_cover, album_id, cover_path)
 
             # 先发文字、再发图片，拆开避免 QQ NT 超时
             await self._send_proactive(origin, info)
@@ -359,7 +359,7 @@ download:
         """发送封面 + 信息"""
         text = event.message_str.strip()
         parts = text.split()
-        if len(parts) < 2 or not re.match(r'^\d+$', parts[1].strip()):
+        if len(parts) < 2 or not re.match(r"^\d+$", parts[1].strip()):
             yield event.plain_result(
                 "用法: /jm <本子ID>\n"
                 "  发送封面 + 基本信息\n"
@@ -428,7 +428,9 @@ download:
                 try:
                     await asyncio.to_thread(
                         client.download_by_image_detail,
-                        image, img_path, decode,
+                        image,
+                        img_path,
+                        decode,
                     )
                     downloaded.append(img_path)
                 except Exception as e:
@@ -440,14 +442,17 @@ download:
 
         return downloaded
 
-    async def _compress_and_merge(self, downloaded: list, tmp_dir: str, album, album_id: str):
+    async def _compress_and_merge(
+        self, downloaded: list, tmp_dir: str, album, album_id: str
+    ):
         """压缩图片 + 合成 PDF，返回 pdf 路径"""
         # 压缩
         batch_size = 25
         for i in range(0, len(downloaded), batch_size):
-            batch = downloaded[i:i + batch_size]
+            batch = downloaded[i : i + batch_size]
             await asyncio.to_thread(
-                _compress_batch, batch,
+                _compress_batch,
+                batch,
                 self.config["pdf_max_width"],
                 self.config["pdf_jpeg_quality"],
             )
@@ -455,7 +460,7 @@ download:
                 return None
 
         # 合成 PDF
-        safe_name = re.sub(r'[\\/:*?"<>|]', '_', f"{album.author} - {album.oname}")
+        safe_name = re.sub(r'[\\/:*?"<>|]', "_", f"{album.author} - {album.oname}")
         pdf_filename = f"JM{album_id} {safe_name}.pdf"
         if len(pdf_filename) > 200:
             pdf_filename = f"JM{album_id}.pdf"
@@ -464,7 +469,9 @@ download:
         await asyncio.to_thread(_images_to_pdf, downloaded, pdf_path)
         return pdf_path
 
-    async def _do_download_pdf_yield(self, event: AstrMessageEvent, album_id: str, start: int, end: int):
+    async def _do_download_pdf_yield(
+        self, event: AstrMessageEvent, album_id: str, start: int, end: int
+    ):
         """直接模式：yield 下载进度 → 发送 PDF"""
         tmp_root = self.config["temp_dir"] or tempfile.gettempdir()
         tmp_dir = tempfile.mkdtemp(prefix=f"jm_pdf_{album_id}_", dir=tmp_root)
@@ -495,12 +502,16 @@ download:
                 return
 
             if not downloaded:
-                yield event.plain_result(f"JM{album_id} 没有成功下载任何图片 (；´д｀)ゞ")
+                yield event.plain_result(
+                    f"JM{album_id} 没有成功下载任何图片 (；´д｀)ゞ"
+                )
                 return
 
             # 压缩 + 合成（无进度啰嗦，直接搞）
             yield event.plain_result(f"正在合成 PDF（共 {len(downloaded)} 页）...")
-            pdf_path = await self._compress_and_merge(downloaded, tmp_dir, album, album_id)
+            pdf_path = await self._compress_and_merge(
+                downloaded, tmp_dir, album, album_id
+            )
 
             if self._cancel_flag:
                 yield event.plain_result("下载已取消 _(:з」∠)_")
@@ -523,12 +534,16 @@ download:
             yield event.plain_result(info_text)
 
             try:
-                yield event.chain_result([
-                    Comp.File(file=pdf_path, name=os.path.basename(pdf_path)),
-                ])
+                yield event.chain_result(
+                    [
+                        Comp.File(file=pdf_path, name=os.path.basename(pdf_path)),
+                    ]
+                )
             except Exception as e:
                 logger.error(f"PDF 发送失败: {e}")
-                yield event.plain_result(f"PDF 发送失败: 可能当前平台不支持文件类型 (´-ι_-｀)")
+                yield event.plain_result(
+                    "PDF 发送失败: 可能当前平台不支持文件类型 (´-ι_-｀)"
+                )
 
         except Exception as e:
             logger.error(f"PDF 下载异常: {e}", exc_info=True)
@@ -542,7 +557,9 @@ download:
             except Exception:
                 pass
 
-    async def _do_download_pdf_proactive(self, origin: str, album_id: str, start: int, end: int):
+    async def _do_download_pdf_proactive(
+        self, origin: str, album_id: str, start: int, end: int
+    ):
         """队列模式：proactive 发送下载进度 → 发送 PDF"""
         tmp_root = self.config["temp_dir"] or tempfile.gettempdir()
         tmp_dir = tempfile.mkdtemp(prefix=f"jm_pdf_{album_id}_", dir=tmp_root)
@@ -562,7 +579,7 @@ download:
                 f"【{album.author}】{album.oname}\n"
                 f"JM号: {album_id} | 章节: {len(album)} | "
                 f"总页数: {album.page_count if known_pages else '?'}\n"
-                f"预计下载: 第 {start} ~ {actual_end} 页"
+                f"预计下载: 第 {start} ~ {actual_end} 页",
             )
 
             downloaded = await self._download_pages(client, album, start, end, tmp_dir)
@@ -571,11 +588,17 @@ download:
                 await self._send_proactive(origin, "下载已取消 _(:з」∠)_")
                 return
             if not downloaded:
-                await self._send_proactive(origin, f"JM{album_id} 没有成功下载任何图片 (；´д｀)ゞ")
+                await self._send_proactive(
+                    origin, f"JM{album_id} 没有成功下载任何图片 (；´д｀)ゞ"
+                )
                 return
 
-            await self._send_proactive(origin, f"正在合成 PDF（共 {len(downloaded)} 页）...")
-            pdf_path = await self._compress_and_merge(downloaded, tmp_dir, album, album_id)
+            await self._send_proactive(
+                origin, f"正在合成 PDF（共 {len(downloaded)} 页）..."
+            )
+            pdf_path = await self._compress_and_merge(
+                downloaded, tmp_dir, album, album_id
+            )
 
             if self._cancel_flag:
                 await self._send_proactive(origin, "下载已取消 _(:з」∠)_")
@@ -591,7 +614,7 @@ download:
             await self._send_proactive(
                 origin,
                 f"JM{album_id} 【{album.author}】{album.oname}\n"
-                f"共 {len(downloaded)} 页 | {pdf_size_mb:.1f} MB"
+                f"共 {len(downloaded)} 页 | {pdf_size_mb:.1f} MB",
             )
 
             try:
@@ -601,14 +624,16 @@ download:
                 )
             except Exception as e:
                 logger.error(f"PDF 发送失败: {e}")
-                await self._send_proactive(origin, f"PDF 发送失败: 可能当前平台不支持文件类型 (´-ι_-｀)")
+                await self._send_proactive(
+                    origin, "PDF 发送失败: 可能当前平台不支持文件类型 (´-ι_-｀)"
+                )
 
         except Exception as e:
             logger.error(f"PDF 下载异常: {e}", exc_info=True)
             await self._send_proactive(
                 origin,
                 f"下载 JM{album_id} 时出错: {str(e)[:200]}\n"
-                f"可能原因: 本子不存在 / 域名被墙 / 网络超时"
+                f"可能原因: 本子不存在 / 域名被墙 / 网络超时",
             )
         finally:
             try:
@@ -650,7 +675,9 @@ download:
         self._busy = True
         self._cancel_flag = False
         try:
-            async for result in self._do_download_pdf_yield(event, album_id, start, end):
+            async for result in self._do_download_pdf_yield(
+                event, album_id, start, end
+            ):
                 yield result
         finally:
             if not self._cancel_flag:
@@ -663,6 +690,7 @@ download:
 # 工具函数（在线程中执行）
 # ---------------------------------------------------------------------------
 
+
 def _compress_batch(paths: list, max_width: int, quality: int):
     """压缩一批图片、原地替换，降低 PDF 合成的内存压力"""
     from PIL import Image
@@ -672,17 +700,17 @@ def _compress_batch(paths: list, max_width: int, quality: int):
             continue
         try:
             img = Image.open(p)
-            if img.mode in ('RGBA', 'P', 'LA', 'PA'):
-                img = img.convert('RGB')
-            elif img.mode != 'RGB':
-                img = img.convert('RGB')
+            if img.mode in ("RGBA", "P", "LA", "PA"):
+                img = img.convert("RGB")
+            elif img.mode != "RGB":
+                img = img.convert("RGB")
 
             w, h = img.size
             if w > max_width:
                 ratio = max_width / w
                 img = img.resize((max_width, int(h * ratio)), Image.LANCZOS)
 
-            img.save(p, 'JPEG', quality=quality, optimize=True)
+            img.save(p, "JPEG", quality=quality, optimize=True)
             img.close()
         except Exception:
             continue
@@ -696,5 +724,5 @@ def _images_to_pdf(image_paths: list, pdf_path: str):
     if not valid:
         raise RuntimeError("没有可用的图片文件")
 
-    with open(pdf_path, 'wb') as f:
+    with open(pdf_path, "wb") as f:
         f.write(img2pdf.convert(valid))
