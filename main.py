@@ -247,8 +247,11 @@ download:
             yield event.plain_result("\n".join(lines))
 
         except Exception as e:
-            logger.error(f"搜索失败: {e}")
-            yield event.plain_result(f"搜索失败: {str(e)[:100]} （´_ゝ`）")
+            logger.error(f"搜索失败: {e}", exc_info=True)
+            yield event.plain_result(
+                f"搜索失败: {str(e)[:100]} （´_ゝ`）\n"
+                f"可能是 JM 服务器抽风或关键词太生僻，换个词试试？"
+            )
 
     # ---- 取消 --------------------------------------------------------------
 
