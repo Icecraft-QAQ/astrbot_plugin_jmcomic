@@ -10,7 +10,8 @@ JM 禁漫下载 AstrBot 插件。群友发的神作本jm号没法直接看？发
 | `/jm_pdf <ID>` | 下载并合成 PDF 发送 |
 | `/jm_pdf <ID> <页数>` | 前 N 页 PDF，如 `/jm_pdf 123456 100` |
 | `/jm_pdf <ID> <起始>-<结束>` | 指定范围 PDF，如 `/jm_pdf 123456 10-50` |
-| `/jm_search <关键词>` | 搜索本子 |
+| `/jm_search <关键词>` | 按最新搜索本子 |
+| `/jm_search <关键词> like` | 按喜欢最多搜索 |
 | `/jm_cancel` | 取消当前任务 + 清空队列 |
 
 ## 任务队列
