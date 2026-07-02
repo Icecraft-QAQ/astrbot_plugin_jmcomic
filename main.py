@@ -220,21 +220,16 @@ download:
             order_by = "mr"  # 最新
             sort_label = "最新"
 
-        try:
-            yield event.plain_result(f"[DEBUG] 搜索: kw={keyword!r} sort={sort_label}")
+        yield event.plain_result(f"正在搜索「{keyword}」（{sort_label}）...")
 
+        try:
             option = self._make_option()
             client = await asyncio.to_thread(option.build_jm_client)
-
-            yield event.plain_result("[DEBUG] 发起 API 请求...")
             page = await asyncio.to_thread(
                 client.search_site, keyword, page=1, order_by=order_by
             )
 
-            yield event.plain_result(
-                f"[DEBUG] page ok, content_len={len(getattr(page, 'content', []))}"
-            )
-
+            # 直接读 content 列表，不用 JM 库的 __getitem__ 切片（会越界）
             content = getattr(page, "content", None)
             if not content or (hasattr(content, "__len__") and len(content) == 0):
                 yield event.plain_result(f"没搜到「{keyword}」相关结果 (´-ι_-｀)")
