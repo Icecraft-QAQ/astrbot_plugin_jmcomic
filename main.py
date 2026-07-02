@@ -198,23 +198,41 @@ download:
         text = event.message_str.strip()
         parts = text.split(maxsplit=1)
         if len(parts) < 2:
-            yield event.plain_result("用法: /jm_search <关键词>\n例如: /jm_search 全彩 人妻")
+            yield event.plain_result(
+                "用法: /jm_search <关键词> [like]\n"
+                "  默认按最新排序，加 like 按喜欢数排序\n"
+                "  例如: /jm_search 全彩 人妻\n"
+                "       /jm_search 全彩 like"
+            )
             return
 
-        keyword = parts[1].strip()
-        yield event.plain_result(f"正在搜索「{keyword}」...")
+        # 解析关键词和排序方式
+        raw = parts[1].strip()
+        tokens = raw.rsplit(maxsplit=1)
+        if tokens[-1].lower() in ('like', '喜欢'):
+            keyword = tokens[0].strip()
+            order_by = 'tf'  # 喜欢最多
+            sort_label = '喜欢最多'
+        else:
+            keyword = raw
+            order_by = 'mr'  # 最新
+            sort_label = '最新'
+
+        yield event.plain_result(f"正在搜索「{keyword}」（{sort_label}）...")
 
         try:
             option = self._make_option()
             client = await asyncio.to_thread(option.build_jm_client)
-            page = await asyncio.to_thread(client.search_site, keyword, page=1)
+            page = await asyncio.to_thread(
+                client.search_site, keyword, page=1, order_by=order_by
+            )
 
             if not page or len(page) == 0:
                 yield event.plain_result(f"没搜到「{keyword}」相关结果 (´-ι_-｀)")
                 return
 
             # 搜索结果 items 是 (album_id, info_dict) 元组
-            lines = [f"搜索「{keyword}」的结果:"]
+            lines = [f"搜索「{keyword}」（{sort_label}）的结果:"]
             for i, item in enumerate(page[:10]):
                 aid, info = item
                 title = str(info.get('name', '未知'))
