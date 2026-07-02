@@ -213,14 +213,15 @@ download:
                 yield event.plain_result(f"没搜到「{keyword}」相关结果 (´-ι_-｀)")
                 return
 
+            # 搜索结果 items 是 (album_id, info_dict) 元组
             lines = [f"搜索「{keyword}」的结果:"]
-            for i, album in enumerate(page[:10]):
-                aid = album.album_id
-                title = getattr(album, 'name', '未知')
+            for i, item in enumerate(page[:10]):
+                aid, info = item
+                title = str(info.get('name', '未知'))
                 if len(title) > 40:
                     title = title[:37] + "..."
-                author = getattr(album, 'author', '未知')
-                pages = getattr(album, 'page_count', '?')
+                author = str(info.get('author', info.get('authors', '未知')))
+                pages = info.get('page_count', '?')
                 lines.append(f"{i + 1}. JM{aid} | 【{author}】{title} ({pages}P)")
 
             yield event.plain_result("\n".join(lines))

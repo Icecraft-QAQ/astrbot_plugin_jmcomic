@@ -1,6 +1,6 @@
 # astrbot_plugin_jmcomic
 
-JM 禁漫下载 AstrBot 插件 ヽ(✿ﾟ▽ﾟ)ノ
+JM 禁漫下载 AstrBot 插件。群友发的神作本jm号没法直接看？发的猎奇本没法预览有多逆天？交给bot吧，无论是先看两眼（好怪哦）还是当场开导，都能一键做到 ヽ(✿ﾟ▽ﾟ)ノ
 
 ## 指令
 
@@ -67,6 +67,11 @@ cp -r astrbot_plugin_jmcomic /path/to/astrbot/addons/plugins/
 | `proxy` | 国内服务器建议 `"http://127.0.0.1:7890"` |
 | `pdf_max_width` | 图片压缩最大宽度，超过等比缩小 |
 | `pdf_jpeg_quality` | JPEG 压缩质量，越低文件越小 |
+
+## 致谢
+
+- [JMComic-Crawler-Python](https://github.com/hect0x7/JMComic-Crawler-Python) — 禁漫 Python API
+- [AstrBot](https://github.com/AstrBotDevs/AstrBot) — 多平台 chatbot 框架
 
 ## License
 
