@@ -223,11 +223,26 @@ download:
         yield event.plain_result(f"正在搜索「{keyword}」（{sort_label}）...")
 
         try:
-            option = self._make_option()
-            client = await asyncio.to_thread(option.build_jm_client)
-            page = await asyncio.to_thread(
-                client.search_site, keyword, page=1, order_by=order_by
-            )
+            # 分段 try 便于定位 "list index out of range" 来源
+            try:
+                option = self._make_option()
+            except Exception:
+                logger.error("搜索失败: _make_option", exc_info=True)
+                raise
+
+            try:
+                client = await asyncio.to_thread(option.build_jm_client)
+            except Exception:
+                logger.error("搜索失败: build_jm_client", exc_info=True)
+                raise
+
+            try:
+                page = await asyncio.to_thread(
+                    client.search_site, keyword, page=1, order_by=order_by
+                )
+            except Exception:
+                logger.error("搜索失败: search_site", exc_info=True)
+                raise
 
             if not page or len(page) == 0:
                 yield event.plain_result(f"没搜到「{keyword}」相关结果 (´-ι_-｀)")
@@ -247,7 +262,6 @@ download:
             yield event.plain_result("\n".join(lines))
 
         except Exception as e:
-            logger.error(f"搜索失败: {e}", exc_info=True)
             yield event.plain_result(
                 f"搜索失败: {str(e)[:100]} （´_ゝ`）\n"
                 f"可能是 JM 服务器抽风或关键词太生僻，换个词试试？"
