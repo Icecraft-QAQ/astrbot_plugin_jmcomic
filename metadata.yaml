@@ -3,4 +3,4 @@ display_name: JM禁漫下载
 desc: 根据 JM 号下载并发送禁漫本子，支持按页数范围下载、搜索本子。针对低配服务器做了内存优化～(￣▽￣)~*
 version: v1.2.0
 author: icechan
-repo: https://github.com/icechan/astrbot_plugin_jmcomic
+repo: https://github.com/Icecraft-QAQ/astrbot_plugin_jmcomic
