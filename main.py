@@ -244,20 +244,24 @@ download:
                 logger.error("搜索失败: search_site", exc_info=True)
                 raise
 
-            if not page or len(page) == 0:
+            # page.content 是原始 List[(album_id, info_dict)]，直接遍历最稳妥
+            content = getattr(page, "content", None)
+            if not content or len(content) == 0:
                 yield event.plain_result(f"没搜到「{keyword}」相关结果 (´-ι_-｀)")
                 return
 
-            # 搜索结果 items 是 (album_id, info_dict) 元组
             lines = [f"搜索「{keyword}」（{sort_label}）的结果:"]
-            for i, item in enumerate(page[:10]):
-                aid, info = item
-                title = str(info.get("name", "未知"))
-                if len(title) > 40:
-                    title = title[:37] + "..."
-                author = str(info.get("author", info.get("authors", "未知")))
-                pages = info.get("page_count", "?")
-                lines.append(f"{i + 1}. JM{aid} | 【{author}】{title} ({pages}P)")
+            try:
+                for i, (aid, info) in enumerate(content[:10]):
+                    title = str(info.get("name", "未知"))
+                    if len(title) > 40:
+                        title = title[:37] + "..."
+                    author = str(info.get("author", info.get("authors", "未知")))
+                    pages = info.get("page_count", "?")
+                    lines.append(f"{i + 1}. JM{aid} | 【{author}】{title} ({pages}P)")
+            except Exception:
+                logger.error("搜索失败: 结果解析", exc_info=True)
+                raise
 
             yield event.plain_result("\n".join(lines))
 
