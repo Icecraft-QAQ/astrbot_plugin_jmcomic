@@ -220,52 +220,55 @@ download:
             order_by = "mr"  # 最新
             sort_label = "最新"
 
-        yield event.plain_result(f"正在搜索「{keyword}」（{sort_label}）...")
-
-        import traceback
-
         try:
-            print("[DEBUG] search: _make_option start", flush=True)
+            yield event.plain_result(f"[DEBUG] 搜索: kw={keyword!r} sort={sort_label}")
+
             option = self._make_option()
-            print("[DEBUG] search: _make_option ok", flush=True)
-
-            print("[DEBUG] search: build_jm_client start", flush=True)
             client = await asyncio.to_thread(option.build_jm_client)
-            print("[DEBUG] search: build_jm_client ok", flush=True)
 
-            print("[DEBUG] search: search_site start", flush=True)
+            yield event.plain_result("[DEBUG] 发起 API 请求...")
             page = await asyncio.to_thread(
                 client.search_site, keyword, page=1, order_by=order_by
             )
-            print("[DEBUG] search: search_site ok", flush=True)
 
-            content = getattr(page, "content", None)
-            print(
-                f"[DEBUG] search: content len={len(content) if content else 'None'}",
-                flush=True,
+            yield event.plain_result(
+                f"[DEBUG] page ok, content_len={len(getattr(page, 'content', []))}"
             )
 
-            if not content or len(content) == 0:
+            content = getattr(page, "content", None)
+            if not content or (hasattr(content, "__len__") and len(content) == 0):
                 yield event.plain_result(f"没搜到「{keyword}」相关结果 (´-ι_-｀)")
                 return
 
+            # 防御性解析：每条 item 可能是 (id, dict) 或 (id, str) 等
             lines = [f"搜索「{keyword}」（{sort_label}）的结果:"]
-            print("[DEBUG] search: building result lines", flush=True)
-            for i, (aid, info) in enumerate(content[:10]):
-                title = str(info.get("name", "未知"))
-                if len(title) > 40:
-                    title = title[:37] + "..."
-                author = str(info.get("author", info.get("authors", "未知")))
-                pages = info.get("page_count", "?")
-                lines.append(f"{i + 1}. JM{aid} | 【{author}】{title} ({pages}P)")
-            print("[DEBUG] search: result lines built", flush=True)
+            shown = 0
+            for item in content:
+                if shown >= 10:
+                    break
+                try:
+                    if not isinstance(item, (list, tuple)) or len(item) < 2:
+                        continue
+                    aid = str(item[0])
+                    info = item[1] if isinstance(item[1], dict) else {}
+                    title = str(info.get("name", "未知"))
+                    if len(title) > 40:
+                        title = title[:37] + "..."
+                    author = str(info.get("author", info.get("authors", "未知")))
+                    pages = info.get("page_count", "?")
+                    lines.append(
+                        f"{shown + 1}. JM{aid} | 【{author}】{title} ({pages}P)"
+                    )
+                    shown += 1
+                except Exception:
+                    continue
 
             yield event.plain_result("\n".join(lines))
-            print("[DEBUG] search: result sent", flush=True)
 
         except Exception as e:
-            print(f"[DEBUG] search EXCEPTION: {e}", flush=True)
-            traceback.print_exc()
+            import traceback
+
+            logger.error(traceback.format_exc())
             yield event.plain_result(
                 f"搜索失败: {str(e)[:100]} （´_ゝ`）\n"
                 f"可能是 JM 服务器抽风或关键词太生僻，换个词试试？"
